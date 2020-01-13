@@ -1,14 +1,22 @@
+import dotenv from 'dotenv';
 import 'module-alias/register';
 import express from 'express';
 import morgan from 'morgan';
-import nextjs from 'server/lib/next';
 import { responseErrorHandler } from 'express-response-errors';
-import exampleRouter from 'server/routers/exampleRouter';
+
+import nextjs from 'server/lib/next';
+import { initDB } from 'server/db';
+import { apiV1 } from './routes';
+
+dotenv.config();
 
 const app: express.Application = express();
 
 nextjs.nextApp.prepare().then(async () => {
   const port = process.env.PORT || 8000;
+
+  const connection = await initDB;
+  await connection.runMigrations();
 
   app.use(
     morgan(':method :url :status', {
@@ -18,7 +26,7 @@ nextjs.nextApp.prepare().then(async () => {
   app.use(express.json());
   app.use(express.static('public'));
 
-  app.use(exampleRouter);
+  app.use(apiV1);
 
   app.use(responseErrorHandler);
 
